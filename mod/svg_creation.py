@@ -3,7 +3,10 @@ from bpy.types import Operator
 from . check_settings import check_settings
 from . localize_scene import localize_scene
 from . setup_geometry import rip_and_tear
-from . setup_visuals import save_render_settings, setup_render
+from . setup_visuals import setup_materials, setup_compositor
+from . setup_render import save_render_settings, setup_render
+from . bitmaps_render import bitmaps_render
+from . bitmaps_trace import bitmaps_trace
 
 class SVGC_OT_Main(Operator):
     """Creates SVG using given parameters. Works in object mode."""
@@ -41,8 +44,8 @@ def create_svg(context):
     setup_materials(context)
     setup_compositor(context)
 
-    bitmaps = render_bitmaps(context)
-    trace_bitmaps(context, bitmaps)
+    bitmaps = bitmaps_render(context)
+    bitmaps_trace(context, bitmaps)
 
     save_render_settings(context, "RESTORE", render_settings_backup)
 
