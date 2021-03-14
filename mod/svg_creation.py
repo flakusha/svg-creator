@@ -1,5 +1,6 @@
 import bpy, time
 from bpy.types import Operator
+from . check_settings import check_settings
 from . localize_scene import localize_scene
 from . setup_geometry import rip_and_tear
 from . setup_visuals import save_render_settings, setup_render

@@ -22,18 +22,15 @@ def save_render_settings(context, mode: str, render_settings_backup = None):
 
         if revert_scene:
             bpy.ops.wm.revert_mainfile()
-        elif not revert_scene and render_discard:
+        elif render_discard:
             [setattr(context.scene.render, k, v) for k, v in
             render_settings_backup if not
             context.scene.render.is_property_readonly(k)]
-        elif render_discard:
-            [setattr(context.scene.render, k, v) for k, v in
-            render_settings_backup
-            if not context.scene.render.is_property_readonly(k)]
 
 def setup_render(context):
     """Function sets up the render to be compatible with tracing."""
     scene = context.scene
+    # eevee render settings
     scene.eevee.taa_render_samples = 1
     scene.eevee.use_gtao = False
     scene.eevee.use_bloom = False
@@ -43,3 +40,15 @@ def setup_render(context):
     scene.render.use_high_quality_normals = True
     scene.render.film_transparent = True
     scene.use_nodes = True
+
+    # view layer settings
+    view_layer = context.view_layer
+    view_layer.use_pass_normal = True
+    view_layer.use_pass_diffuse_color = True
+    view_layer.use_pass_glossy_color = True
+    view_layer.use_pass_emit = True
+
+    if not "VColAOV" in view_layer.aovs:
+        vcol_aov = bpy.ops.scene.view_layer_add_aov()
+        vcol_aov.name = "VColAOV"
+        vcol_aov.type = "COLOR"

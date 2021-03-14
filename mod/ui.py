@@ -47,7 +47,8 @@ class SVGC_PT_UI(Panel):
         col.prop(svgcp, "TracingEnginePathImagetracer")
         col.prop(svgcp, "TracingEngineImagetracerNode")
         col.prop(svgcp, "TracingEnginePathRustrace")
-
+        
+        layout.label(text = "Geometry and image processing settings:")
         row = layout.row(align = True)
         row.prop(svgcp, "RenderFixedAngleUse")
         row.prop(svgcp, "RenderFixedAngle")

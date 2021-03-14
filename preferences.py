@@ -98,7 +98,7 @@ class SVGC_Preferences(AddonPreferences):
         name = "Camera Mode",
         description = "Mode which is used to render scene to SVG",
         items = (
-            ("Auto", "Auto mode", "Camera settings are used"),
+            ("Auto", "Auto", "Current Camera settings are used"),
             ("Perspective", "Perspective", "Camera will be set to perspective"),
             ("Ortho", "Orthographic", "Camera will be set to orthographic"),
             ("Panoramic", "Panoramic", "Camera will be set to panoramic"),
@@ -117,7 +117,7 @@ class SVGC_Preferences(AddonPreferences):
     RenderDiscard: BoolProperty(
         name = "Discard render",
         description = "Discard new render settings after svg creation " +\
-            "in case Cycles render was used originally",
+            "in case Eevee render was used originally",
         default = True,
     )
     RenderOnly: BoolProperty(
@@ -138,9 +138,9 @@ class SVGC_Preferences(AddonPreferences):
         items = (
             ("Potrace", "Potrace engine",
             "Potrace engine by Peter Selinger", ),
-            ("Rustrace", "Rustrace", "Rustrace engine by addon's author", ),
             ("ImageTracerJS", "ImageTracerJS",
             "ImageTracerJS by András Jankovics", ),
+            ("Rustrace", "Rustrace", "Rustrace engine by addon's author", ),
         ),
         default = "Potrace",
     )
