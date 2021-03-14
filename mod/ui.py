@@ -10,16 +10,17 @@ class SVGC_PT_UI(Panel):
 
     def draw(self, context):
         layout = self.layout
-        scene = context.scene
-        # Registered pointer
-        svgcp = scene.SVG_Creator
+        svgcp = context.preferences.addons["svg-creator"].preferences
         row = layout.row()
         row.scale_y = 2.0
         row.operator("svg_creator.svg_create")
 
         layout.label(text = "Render settings:")
+        col = layout.column()
+        col.prop(svgcp, "SVGPath")
         row = layout.row(align = True)
         row.prop(svgcp, "RenderResolution")
+        row = layout.row(align = True)
         row.prop(svgcp, "RenderFormat")
         row.prop(svgcp, "RenderPrecision")
         row = layout.row(align = True)
@@ -29,7 +30,6 @@ class SVGC_PT_UI(Panel):
         row.prop(svgcp, "RenderAnimationMode")
         row = layout.row(align = True)
         row.prop(svgcp, "CameraMode")
-    
 
         layout.label(text = "Scene processing options:")
         row = layout.row()
@@ -45,6 +45,7 @@ class SVGC_PT_UI(Panel):
         col = layout.column(align = True)
         col.prop(svgcp, "TracingEnginePathPotrace")
         col.prop(svgcp, "TracingEnginePathImagetracer")
+        col.prop(svgcp, "TracingEngineImagetracerNode")
         col.prop(svgcp, "TracingEnginePathRustrace")
 
         row = layout.row(align = True)

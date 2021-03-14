@@ -23,9 +23,8 @@ imagetracerjs_path = os.path.join(os.path.dirname(__file__), "bin",
 rustrace_path = os.path.join(os.path.dirname(__file__), "bin",
     "rustrace")
 
-# Addon settings
-class SVG_Creator_Properties(PropertyGroup):
-    """Docstring"""
+class SVGC_Preferences(AddonPreferences):
+    bl_idname = __package__
 
     # Render settings
     RenderResolution: FloatProperty(
@@ -57,6 +56,16 @@ class SVG_Creator_Properties(PropertyGroup):
         ),
         default = "BMP",
     )
+    RenderColorAnalysis: EnumProperty(
+        name = "Render Color Analyzer",
+        description = "Algorithm for render colors analysis",
+        items = (
+            ("Python", "Native Python", "Slow mode, no libraries required", ),
+            ("Rust", "Rust Color Detector", "Fast, needs to be compiled", ),
+        ),
+        default = "Python",
+    )
+
     RenderAnimation: BoolProperty(
         name = "Render Animation",
         description = "Render current frame, or render whole animation",
@@ -121,20 +130,6 @@ class SVG_Creator_Properties(PropertyGroup):
         description = "Save render into separate file",
         default = False,
     )
-    RenderColorAnalysis: EnumProperty(
-        name = "Render color analysis mode",
-        description = "After render colors in image",
-        items = (
-            ("Native", "Python color search",
-            "Python image color analysis, slow, but doesn't need additional " +\
-            "compilation and setup", ),
-            ("Rust", "Rust color search",
-            "Rust image color analysis, fast, but needs additional binary " +\
-            "library compilation for Python",
-            ),
-        ),
-        default = "Native",
-    )
 
     # Tracing engines settings
     TracingEngine: EnumProperty(
@@ -158,7 +153,13 @@ class SVG_Creator_Properties(PropertyGroup):
     TracingEnginePathImagetracer: StringProperty(
         name = "ImagetracerJS Path",
         description = "Path for ImagetracerJS engine",
-        default = "",
+        default = imagetracerjs_path,
+        subtype = "FILE_PATH",
+    )
+    TracingEngineImagetracerNode: StringProperty(
+        name = "Node.js path",
+        description = "Node.js is needed to run ImagetracerJS",
+        default = "node",
         subtype = "FILE_PATH",
     )
     TracingEnginePathRustrace: StringProperty(
@@ -185,6 +186,7 @@ class SVG_Creator_Properties(PropertyGroup):
         default = 1024,
     )
 
+    # Output settings
     RemoveImages: BoolProperty(
         name = "Remove renders after processing",
         description = "Remove rendered raster images after SVG creation",
@@ -195,16 +197,17 @@ class SVG_Creator_Properties(PropertyGroup):
         description = "Remove masks used for tracing",
         default = True,
     )
+    SVGPath: StringProperty(
+        name = "SVG Output Destination",
+        description = "Folder for SVGs",
+        default = "//",
+        subtype = "DIR_PATH",
+    )
 
 
-class SVG_Creator_Preferences(AddonPreferences):
-    bl_idname = __package__
-    print("Debug: bl_idname:", __package__)
 
 def register():
-    bpy.utils.register_class(SVG_Creator_Properties)
-    bpy.utils.register_class(SVG_Creator_Preferences)
+    bpy.utils.register_class(SVGC_Preferences)
 
 def unregister():
-    bpy.utils.unregister_class(SVG_Creator_Preferences)
-    bpy.utils.unregister_class(SVG_Creator_Properties)
+    bpy.utils.unregister_class(SVGC_Preferences)
