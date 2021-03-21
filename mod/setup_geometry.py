@@ -1,6 +1,7 @@
 import bpy, math, bmesh, random
 from typing import Set, Tuple
 
+# Divisor coefficient for int colors
 coef = {
     "8 bit": 255,
     "16 bit": 65535,
@@ -194,7 +195,7 @@ def generate_color(context, colors) -> (Set, Tuple, Tuple):
     # Black and White colors are prohibited
     # 0 and 255 are excluded for 8-bit
     # 0-1000 and 65435-65535 are excluded for 16-bit
-    # 0-10000000 and 4284967295-4294967295 are excluded for 32-bit
+    # 0-10_000_000 and 4_284_967_295-4_294_967_295 are excluded for 32-bit
     render_precision = context.preferences.addons["svg-creator"]\
         .preferences.RenderPrecision
 
@@ -203,9 +204,9 @@ def generate_color(context, colors) -> (Set, Tuple, Tuple):
         while color in colors:
             color = tuple([random.randint(1, 254) for _ in range(3)])
     elif render_precision == "16 bit":
-        color = tuple([random.randint(100, 65425) for _ in range(3)])
+        color = tuple([random.randint(1000, 65425) for _ in range(3)])
         while color in colors:
-            color = tuple([random.randint(100, 65425) for _ in range(3)])
+            color = tuple([random.randint(1000, 65425) for _ in range(3)])
     elif render_precision == "32 bit":
         color = tuple(
             [random.randint(10_000_000, 4284967295) for _ in range(3)])

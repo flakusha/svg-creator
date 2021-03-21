@@ -67,7 +67,7 @@ def setup_compositor(context):
 
 def add_rnd_node(context, node_name: str, yloc = 0, is_aov = False):
     """Adds new nodes in compositor, picks info from Render Layer or AOV."""
-    if is_aov:
+    if is_aov and not node_name in context.view_layer.aovs:
         aov = bpy.ops.scene.view_layer_add_aov()
         aov.name = node_name
 

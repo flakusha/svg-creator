@@ -49,7 +49,7 @@ def setup_render(context):
     view_layer.use_pass_glossy_color = True
     view_layer.use_pass_emit = True
 
-    if not "VColAOV" in view_layer.aovs:
+    if not "VCol" in view_layer.aovs:
         vcol_aov = bpy.ops.scene.view_layer_add_aov()
-        vcol_aov.name = "VColAOV"
+        vcol_aov.name = "VCol"
         vcol_aov.type = "COLOR"
