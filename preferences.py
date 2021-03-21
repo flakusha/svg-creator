@@ -52,7 +52,7 @@ class SVGC_Preferences(AddonPreferences):
         items = (
             ("BMP", "BMP", "Fastest for processing, but uncompressed, 8 bit", ),
             ("PNG", "PNG", "Slower processing, much smaller, 8+ bit", ),
-            ("EXR", "EXR", "Slower processing, smaller, 16+ bit", ),
+            ("OPEN_EXR", "EXR", "Slower processing, smaller, 16+ bit", ),
         ),
         default = "BMP",
     )
@@ -156,6 +156,12 @@ class SVGC_Preferences(AddonPreferences):
     RenderSave: BoolProperty(
         name = "Save into separate file",
         description = "Save render into separate file",
+        default = False,
+    )
+    RenderSingleUser: BoolProperty(
+        name = "Single User Data",
+        description = "Make all object data single user, every object will " +\
+            "have unque set of colors",
         default = False,
     )
 

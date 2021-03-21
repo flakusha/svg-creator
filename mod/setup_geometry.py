@@ -25,24 +25,31 @@ def rip_and_tear(context) -> Set:
     # Totally white and totally black colors are prohibited
     colors = set()
     # Apply split_n_paint function to every object and unite resulting colors
-    colors.union(set(tuple([split_n_paint(context, colors, precision, obj,
-    angle_use_fixed, angle_fixed, processed) for obj in context.scene.objects
-    if obj.type == "MESH"])))
+    # colors.union(tuple(set(tuple([split_n_paint(context, colors, precision, obj,
+    # angle_use_fixed, angle_fixed, processed) for obj in context.scene.objects
+    # if obj.type == "MESH"]))))
 
-    colors.remove(None)
+    for obj in context.scene.objects:
+        if obj.type == "MESH":
+            if obj.data in processed or len(obj.data.polygons) == 0:
+                processed.add(obj.data)
+            else:
+                colors.union(
+                    split_n_paint(
+                        context, colors, precision, obj,
+                        angle_use_fixed, angle_fixed,
+                        processed,
+                    )
+                )
+
     return colors
 
 def split_n_paint(context, colors, precision, obj, angle_use_fixed,
-angle_fixed, processed):
+angle_fixed, processed) -> Set[Tuple]:
     """Split edges of mesh and paint them with random color, add processed meshes into set to avoid splitting and painting them for the second time.
     Processed set is totally ignored in case scene has single-user objects and
     data, in this case everything will have unique and random colors, but
     overall processing time will be increased."""
-
-    if obj.data in processed or len(obj.data.polygons) < 1:
-        return None
-    else:
-        processed.add(obj.data)
 
     if not angle_use_fixed:
         if obj.data.use_auto_smooth:
@@ -55,7 +62,8 @@ angle_fixed, processed):
 
     # Add VCol layer to the model in case it already has one or has none
     if not "VCol" in obj.data.vertex_colors:
-        vcol = bpy.ops.mesh.vertex_color_add()
+        # vcol = bpy.ops.mesh.vertex_color_add()
+        vcol = obj.data.vertex_colors.new(name = "VCol", do_init = False)
         vcol.name = "VCol"
         vcol.active = True
         vcol.active_render = True
@@ -166,11 +174,11 @@ angle_fixed, processed):
                 else:
                     sf = sft
 
-            vcol = bm.loops.color.get("VCol")
+            vcol = bm.loops.layers.color.get("VCol")
 
             for f in sf:
                 for loop in f.loops:
-                    loop[vcol] = (color_f[0], color_f[1], color_f[2])
+                    loop[vcol] = (color_f[0], color_f[1], color_f[2], 1.0)
 
             for f in sf:
                 f.select_set(False)

@@ -1,9 +1,12 @@
 import bpy
 
-def localize_scene(context, single_user):
+def localize_scene(context):
     """Pulls all the links into file, makes objects, data and materials local 
     to current file, optionally makes objects and object data single-user to
     randomize all tha paint."""
+    single_user = context.preferences.addons["svg-creator"]\
+        .preferences.RenderSingleUser
+
     for obj in bpy.context.scene.objects:
         obj.select_set(state = True)
 

@@ -42,6 +42,7 @@ class SVGC_PT_UI(Panel):
         row.prop(svgcp, "RenderOnly")
         row.prop(svgcp, "RevertScene")
         row.prop(svgcp, "RenderDiscard")
+        row.prop(svgcp, "RenderSingleUser")
 
         layout.label(text = "Tracing settings:")
         row = layout.row()

@@ -20,6 +20,9 @@ def save_render_settings(context, mode: str, render_settings_backup = None):
         render_discard = context.preferences.addons["svg-creator"].\
             preferences.RenderDiscard
 
+        return
+
+        # Disabled for now
         if revert_scene:
             bpy.ops.wm.revert_mainfile()
         elif render_discard:
@@ -30,6 +33,10 @@ def save_render_settings(context, mode: str, render_settings_backup = None):
 def setup_render(context):
     """Function sets up the render to be compatible with tracing."""
     scene = context.scene
+    addon_preferences = context.preferences.addons["svg-creator"].preferences
+    render_format = addon_preferences.RenderFormat
+    render_precision = addon_preferences.RenderPrecision.split(" ")[0]
+
     # eevee render settings
     # NOTE As buffers are used, there is no need in samples > 1
     scene.eevee.taa_render_samples = 1
@@ -40,6 +47,11 @@ def setup_render(context):
     scene.eevee.use_volumetric_lights = False
     scene.render.use_high_quality_normals = True
     scene.render.film_transparent = True
+    scene.render.image_settings.file_format = render_format
+    # NOTE Correct depth must be controlled using check_settings()
+    if render_format in ("PNG", "OPEN_EXR"):
+        scene.render.image_settings.color_depth = render_precision
+
     scene.use_nodes = True
 
     # view layer settings
@@ -50,6 +62,19 @@ def setup_render(context):
     view_layer.use_pass_emit = True
 
     if not "VCol" in view_layer.aovs:
-        vcol_aov = bpy.ops.scene.view_layer_add_aov()
-        vcol_aov.name = "VCol"
-        vcol_aov.type = "COLOR"
+        aov = view_layer.aovs.add()
+        aov.name = "VCol"
+        aov.type = "COLOR"
+
+    # NOTE Shouldn't work in --background mode, so try except
+    try:
+        for window in context.window_manager.windows:
+            for area in window.screen.areas:
+                if area.type == "VIEW_3D":
+                    for space in area.spaces:
+                        if space.type == "SpaceView3D":
+                            if space.shading.type == "SOLID":
+                                space.shading.color_type = "VERTEX"
+                                # I enjoy typing
+    except:
+        pass
