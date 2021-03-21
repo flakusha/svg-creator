@@ -30,6 +30,12 @@ class SVGC_PT_UI(Panel):
         row.prop(svgcp, "RenderAnimationMode")
         row = layout.row(align = True)
         row.prop(svgcp, "CameraMode")
+        row = layout.row(align = True)
+        row.prop(svgcp, "RenderVCol")
+        row.prop(svgcp, "RenderNormal")
+        row.prop(svgcp, "RenderDiffuse")
+        row.prop(svgcp, "RenderGlossy")
+        row.prop(svgcp, "RenderEmit")
 
         layout.label(text = "Scene processing options:")
         row = layout.row()

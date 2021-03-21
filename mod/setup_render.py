@@ -31,6 +31,7 @@ def setup_render(context):
     """Function sets up the render to be compatible with tracing."""
     scene = context.scene
     # eevee render settings
+    # NOTE As buffers are used, there is no need in samples > 1
     scene.eevee.taa_render_samples = 1
     scene.eevee.use_gtao = False
     scene.eevee.use_bloom = False

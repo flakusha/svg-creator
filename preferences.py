@@ -48,11 +48,11 @@ class SVGC_Preferences(AddonPreferences):
     )
     RenderFormat: EnumProperty(
         name = "Render image format",
-        description = "Image format which will be output for tracing",
+        description = "Image format for tracing",
         items = (
-            ("BMP", "BMP", "Fastest for processing, but uncompressed", ),
-            ("PNG", "PNG", "Slower processing, much smaller", ),
-            ("EXR", "EXR", "Slower processing, smaller, high bit depth", ),
+            ("BMP", "BMP", "Fastest for processing, but uncompressed, 8 bit", ),
+            ("PNG", "PNG", "Slower processing, much smaller, 8+ bit", ),
+            ("EXR", "EXR", "Slower processing, smaller, 16+ bit", ),
         ),
         default = "BMP",
     )
@@ -91,6 +91,34 @@ class SVGC_Preferences(AddonPreferences):
         subtype = "ANGLE",
         default = math.radians(180),
         min = 0, max = 180,
+    )
+
+    # Render different buffers to get more lines traced in final image
+    RenderVCol: BoolProperty(
+        name = "Render Vertex Colors",
+        description = "Render Vertex Colors painted during geometry setup",
+        default = True,
+    )
+    RenderNormal: BoolProperty(
+        name = "Render Normal",
+        description = "Use Normal buffer in render",
+        default = True,
+    )
+    RenderDiffuse: BoolProperty(
+        name = "Render Diffuse",
+        description = "Use Diffuse buffer in render",
+        default = True,
+    )
+    # NOTE Specular in UI, Gloss in other parts of application
+    RenderGlossy: BoolProperty(
+        name = "Render Specular",
+        description = "Use Specular(Glossy) buffer in render",
+        default = True,
+    )
+    RenderEmit: BoolProperty(
+        name = "Render Emission",
+        description = "Use Emission buffer in render",
+        default = True,
     )
 
     # Camera settings
@@ -157,7 +185,7 @@ class SVGC_Preferences(AddonPreferences):
         subtype = "FILE_PATH",
     )
     TracingEngineImagetracerNode: StringProperty(
-        name = "Node.js path",
+        name = "Node.js Path",
         description = "Node.js is needed to run ImagetracerJS",
         default = "node",
         subtype = "FILE_PATH",

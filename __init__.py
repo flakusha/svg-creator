@@ -20,7 +20,7 @@ bl_info = {
     "name": "SVG Creator",
     "description": "Plugin creates SVG images from renders",
     "author": "flakusha",
-    "version": (0, 0, 1),
+    "version": (0, 0, 2),
     "blender": (2, 91, 0),
     "category": "Render",
     "location": "Properties > Output Properties",

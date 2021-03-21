@@ -32,7 +32,7 @@ def create_svg(context):
     sets up render, localizes scene, colors every mesh in the scene, sets up
     materials, sets up compositor, renders bitmaps and then traces them into
     SVGs."""
-    # Abort execution if it's not possible to run any of steps
+    # Abort execution if settings are conflicting
     check_settings(context)
 
     render_settings_backup = save_render_settings(context, "SAVE")
