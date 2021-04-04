@@ -7,28 +7,29 @@ coef = {
     "16 bit": 65535,
     "32 bit": 4294967295,
 }
+# Return this angle if it's not possible to calculate angle between faces
+ang_limit = math.radians(89)
+# Get preferences
+prefs = bpy.context.preferences.addons["svg-creator"].preferences
 
 def rip_and_tear(context) -> Set:
     """Edge split geometry using specified angle or unique mesh settings.
     Also checks non-manifold geometry and hard edges.
     Returns set of colors that are used to color meshes."""
     processed = set()
-    angle_use_fixed = context.preferences.addons["svg-creator"]\
-        .preferences.RenderFixedAngleUse
+    angle_use_fixed = prefs.RenderFixedAngleUse
     # Angle fixed in radians
-    angle_fixed = context.preferences.addons["svg-creator"]\
-        .preferences.RenderFixedAngle
-    precision = context.preferences.addons["svg-creator"]\
-        .preferences.RenderPrecision
+    angle_fixed = prefs.RenderFixedAngle
+    precision = prefs.RenderPrecision
 
     # Colors are saved in format specified by render precision parameter
-    # Totally white and totally black colors are prohibited
+    # Totally white and totally black (and close to them) colors are prohibited
     colors = set()
+
     # Apply split_n_paint function to every object and unite resulting colors
     # colors.union(tuple(set(tuple([split_n_paint(context, colors, precision, obj,
     # angle_use_fixed, angle_fixed, processed) for obj in context.scene.objects
     # if obj.type == "MESH"]))))
-
     for obj in context.scene.objects:
         if obj.type == "MESH":
             if obj.data in processed or len(obj.data.polygons) == 0:
@@ -79,8 +80,10 @@ angle_fixed, processed) -> Set[Tuple]:
         face.hide_set(False)
         face.select_set(False)
 
+    # Split every mesh into chunks corresponding to smooth surfaces limited by
+    # hard edges, basically it's implementation of edge split modifier
     for index, face in enumerate(bm.faces):
-        # Select random face and grow selection till hard boundary is reached
+        # Select random face and grow selection till boundary is reached
         if not face.hide:
             bm.faces.active = bm.faces[index]
             # face_bm, active face
@@ -91,17 +94,21 @@ angle_fixed, processed) -> Set[Tuple]:
             # List of selected faces
             sf = [fbm, ]
 
+            # Grow selection until there is nothing new to select
             while not sel:
                 # for selected current face in selected faces
                 for fsc in sf:
                     # for edge in edges of selected faces
                     for e in fsc.edges:
+                        # non-manifold geometry can lead to incorrect shading
+                        # on surfaces where this kind of shading is not
+                        # expected, so it's a good choice to split using
+                        # non-manifold, edge smoothness is calculated when
+                        # auto-smoothing tick is active
                         c0 = e.smooth
-                        c1 = e.calc_face_angle(math.radians(89.9))\
-                        <= angle_fixed
-                        # non-manifold geometry can lead to weird shading
-                        # c2 = not e.is_manifold
-                        if c0 and c1:
+                        c1 = e.calc_face_angle(ang_limit) <= angle_fixed
+                        c2 = e.is_manifold
+                        if c0 and c1 and c2:
                             # Select linked faces
                             [lf.select_set(True) for lf in e.link_faces]
 
@@ -143,13 +150,13 @@ angle_fixed, processed) -> Set[Tuple]:
                 f.select_set(False)
                 f.hide_set(True)
 
-    # Unhide and unselect faces to start painting
     bm.faces.ensure_lookup_table()
-
+    # Unhide and unselect faces to start painting
     for f in bm.faces:
         f.hide_set(False)
         f.select_set(False)
 
+    # Paint every splitted chunk into random vertex color
     for index, face in enumerate(bm.faces):
         colors, _color, color_f = generate_color(context, colors)
 
@@ -161,6 +168,7 @@ angle_fixed, processed) -> Set[Tuple]:
 
             sf = [fbm, ]
 
+            # Grow selection until there is nothing new to select
             while not sel:
                 se = tuple([e for e in bm.edges if e.select])
                 for e in se:
@@ -184,9 +192,14 @@ angle_fixed, processed) -> Set[Tuple]:
                 f.select_set(False)
                 f.hide_set(True)
 
+    # Unhide faces, so there is no need to unhide faces after entering the
+    # edit mode, speeds up work a bit
     for f in bm.faces:
         f.hide_set(False)
 
+    # Remove doubles after coloring and edge split to avoid artifacts in
+    # renders using any engine
+    bmesh.ops.remove_doubles(bm, verts = [v for v in bm.verts], dist = 1e-5)
     bm.to_mesh(obj.data)
     obj.data.update()
 
@@ -204,8 +217,7 @@ def generate_color(context, colors) -> (Set, Tuple, Tuple):
     # 0 and 255 are excluded for 8-bit
     # 0-1000 and 65435-65535 are excluded for 16-bit
     # 0-10_000_000 and 4_284_967_295-4_294_967_295 are excluded for 32-bit
-    render_precision = context.preferences.addons["svg-creator"]\
-        .preferences.RenderPrecision
+    render_precision = prefs.RenderPrecision
 
     if render_precision == "8 bit":
         color = tuple([random.randint(1, 254) for _ in range(3)])

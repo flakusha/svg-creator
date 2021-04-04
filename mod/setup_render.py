@@ -15,14 +15,13 @@ def save_render_settings(context, mode: str, render_settings_backup = None):
             return None
 
     elif mode.upper() == "RESTORE" and render_settings_backup:
-        revert_scene = context.preferences.addons["svg-creator"].\
-            preferences.RevertScene
-        render_discard = context.preferences.addons["svg-creator"].\
-            preferences.RenderDiscard
+        prefs = context.preferences.addons["svg-creator"].preferences
+        revert_scene = prefs.RevertScene
+        render_discard = prefs.RenderDiscard
 
         return
 
-        # Disabled for now
+        # TODO Disabled for now, must be added after stable version is available
         if revert_scene:
             bpy.ops.wm.revert_mainfile()
         elif render_discard:
