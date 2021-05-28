@@ -1,0 +1,32 @@
+[package]
+name = "svg-creator"
+version = "0.1.0"
+authors = ["Constantine <zenflak@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+[dependencies.pyo3]
+version = "^0.13"
+features = ["extension-module"]
+
+[dependencies.rayon]
+version = "^1.5"
+
+[dependencies.dashmap]
+version = "^4.0"
+features = ["rayon"]
+
+[target.x86_64-apple-darwin]
+rustflags = [
+  "-C", "link-arg=-undefined",
+  "-C", "link-arg=dynamic_lookup",
+]
+
+[target.aarch64-apple-darwin]
+rustflags = [
+  "-C", "link-arg=-undefined",
+  "-C", "link-arg=dynamic_lookup",
+]

@@ -12,7 +12,7 @@ class SVGC_OT_Main(Operator):
     """Creates SVG using given parameters. Works in object mode."""
     bl_idname = "svg_creator.svg_create"
     bl_label = "Create SVG"
-    # No "UNDO" in bl_options, so undo is not possible
+    # No "UNDO" in bl_options, so undo is not possible and no caching is done
     bl_options = {"REGISTER", }
 
     @classmethod

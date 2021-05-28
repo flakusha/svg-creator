@@ -14,7 +14,9 @@ prefs = bpy.context.preferences.addons["svg-creator"].preferences
 
 def rip_and_tear(context) -> Set:
     """Edge split geometry using specified angle or unique mesh settings.
+
     Also checks non-manifold geometry and hard edges.
+
     Returns set of colors that are used to color meshes."""
     processed = set()
     angle_use_fixed = prefs.RenderFixedAngleUse
@@ -48,6 +50,7 @@ def rip_and_tear(context) -> Set:
 def split_n_paint(context, colors, precision, obj, angle_use_fixed,
 angle_fixed, processed) -> Set[Tuple]:
     """Split edges of mesh and paint them with random color, add processed meshes into set to avoid splitting and painting them for the second time.
+
     Processed set is totally ignored in case scene has single-user objects and
     data, in this case everything will have unique and random colors, but
     overall processing time will be increased."""
@@ -72,6 +75,7 @@ angle_fixed, processed) -> Set[Tuple]:
     bm = bmesh.new(use_operators = True)
     bm.from_mesh(obj.data)
     bm.select_mode = {"FACE"}
+    # Generate indices
     bm.verts.ensure_lookup_table()
     bm.edges.ensure_lookup_table()
     bm.faces.ensure_lookup_table()
@@ -81,7 +85,10 @@ angle_fixed, processed) -> Set[Tuple]:
         face.select_set(False)
 
     # Split every mesh into chunks corresponding to smooth surfaces limited by
-    # hard edges, basically it's implementation of edge split modifier
+    # hard edges, basically it's bmesh implementation of edge split modifier.
+    # Boundaries is the list for pairs of lists of vertices and edges for
+    # bmesh.ops.split_edges operator
+    boundaries = []
     for index, face in enumerate(bm.faces):
         # Select random face and grow selection till boundary is reached
         if not face.hide:
@@ -108,7 +115,9 @@ angle_fixed, processed) -> Set[Tuple]:
                         c0 = e.smooth
                         c1 = e.calc_face_angle(ang_limit) <= angle_fixed
                         c2 = e.is_manifold
-                        if c0 and c1 and c2:
+                        c3 = not obj.data.edges[e.index].use_edge_sharp
+
+                        if c0 and c1 and c2 and c3:
                             # Select linked faces
                             [lf.select_set(True) for lf in e.link_faces]
 
@@ -141,8 +150,7 @@ angle_fixed, processed) -> Set[Tuple]:
 
             bv = list(bv)
             be = list(be)
-
-            bmesh.ops.split_edges(bm, verts = bv, edges = be, use_verts = True)
+            boundaries.append((bv, be))
 
             # Hide and deselect processed mesh chunk,
             # so you can't access it again
@@ -150,6 +158,20 @@ angle_fixed, processed) -> Set[Tuple]:
                 f.select_set(False)
                 f.hide_set(True)
 
+        # Unhide back, so operator can work with geometry
+        for f in bm.faces:
+            f.select_set(False)
+            f.hide_set(False)
+        
+        # Finally split edges
+        # Additional for loop because every change of bmesh demands indices
+        # regeneration and c3 in edge check needs check in separate mesh
+        # structure, because there is no access to edge mark data from bmesh
+        for b in boundaries:
+            bv, be = b[0], b[1]
+            bmesh.ops.split_edges(bm, verts = bv, edges = be, use_verts = True)
+
+    # Regenerate indices because bmesh have changed
     bm.faces.ensure_lookup_table()
     # Unhide and unselect faces to start painting
     for f in bm.faces:
@@ -160,37 +182,37 @@ angle_fixed, processed) -> Set[Tuple]:
     for index, face in enumerate(bm.faces):
         colors, _color, color_f = generate_color(context, colors)
 
-        if not face.hide:
-            bm.faces.active = bm.faces[index]
-            fbm = bm.faces.active
-            fbm.select_set(True)
-            sel = False
+        # if not face.hide: # No need to check it anymore TODO remove
+        bm.faces.active = bm.faces[index]
+        fbm = bm.faces.active
+        fbm.select_set(True)
+        sel = False
 
-            sf = [fbm, ]
+        sf = [fbm, ]
 
-            # Grow selection until there is nothing new to select
-            while not sel:
-                se = tuple([e for e in bm.edges if e.select])
-                for e in se:
-                    for f in e.link_faces:
-                        f.select_set(True)
+        # Grow selection until there is nothing new to select
+        while not sel:
+            se = tuple([e for e in bm.edges if e.select])
+            for e in se:
+                for f in e.link_faces:
+                    f.select_set(True)
 
-                sft = [f for f in bm.faces if f.select]
+            sft = [f for f in bm.faces if f.select]
 
-                if sf == sft:
-                    sel = True
-                else:
-                    sf = sft
+            if sf == sft:
+                sel = True
+            else:
+                sf = sft
 
-            vcol = bm.loops.layers.color.get("VCol")
+        vcol = bm.loops.layers.color.get("VCol")
 
-            for f in sf:
-                for loop in f.loops:
-                    loop[vcol] = (color_f[0], color_f[1], color_f[2], 1.0)
+        for f in sf:
+            for loop in f.loops:
+                loop[vcol] = (color_f[0], color_f[1], color_f[2], 1.0)
 
-            for f in sf:
-                f.select_set(False)
-                f.hide_set(True)
+        for f in sf:
+            f.select_set(False)
+            f.hide_set(True)
 
     # Unhide faces, so there is no need to unhide faces after entering the
     # edit mode, speeds up work a bit
@@ -210,29 +232,33 @@ angle_fixed, processed) -> Set[Tuple]:
 def generate_color(context, colors) -> (Set, Tuple, Tuple):
     """Generate random with desired precision and return it with updated
     color set. Colors are normalized in 0-1 range, valid for VCol.
-    8-bit have to be divided by 255, 16-bit - by 65535,
+
+    8-bit have to be divided by 255,
+    16-bit - by 65535,
     32-bit - by 4294967295."""
 
-    # Black and White colors are prohibited
-    # 0 and 255 are excluded for 8-bit
-    # 0-1000 and 65435-65535 are excluded for 16-bit
-    # 0-10_000_000 and 4_284_967_295-4_294_967_295 are excluded for 32-bit
+    # Black and dark colors are prohibited, because render doesn't store any
+    # info in case there is no alpha is in picture.
+    # About 0.15% precision step is cut from the bottom of the range
     render_precision = prefs.RenderPrecision
 
+    # There is naive implementation of color regeneration re-checking new random
+    # color is not in tuple, there should be way to do this better
+    # TODO better random color creation algorithm
     if render_precision == "8 bit":
-        color = tuple([random.randint(1, 254) for _ in range(3)])
+        color = tuple([random.randint(1, 255) for _ in range(3)])
         while color in colors:
-            color = tuple([random.randint(1, 254) for _ in range(3)])
+            color = tuple([random.randint(1, 255) for _ in range(3)])
     elif render_precision == "16 bit":
-        color = tuple([random.randint(1000, 65425) for _ in range(3)])
+        color = tuple([random.randint(500, 65535) for _ in range(3)])
         while color in colors:
-            color = tuple([random.randint(1000, 65425) for _ in range(3)])
+            color = tuple([random.randint(500, 65535) for _ in range(3)])
     elif render_precision == "32 bit":
         color = tuple(
-            [random.randint(10_000_000, 4284967295) for _ in range(3)])
+            [random.randint(10_000_000, 4294967295) for _ in range(3)])
         while color in colors:
             color = tuple(
-                [random.randint(10_000_000, 4284967295) for _ in range(3)])
+                [random.randint(10_000_000, 4294967295) for _ in range(3)])
 
     colors.add(color)
     color_f = tuple([c / coef[render_precision] for c in color])
