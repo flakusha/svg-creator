@@ -3,12 +3,12 @@ from typing import Set, Tuple
 
 # Divisor coefficient for int colors
 coef = {
-    "8 bit": 255,
-    "16 bit": 65535,
-    "32 bit": 4294967295,
+    "8 bit":    255,
+    "16 bit":   65535,
+    "32 bit":   4294967295,
 }
 # Return this angle if it's not possible to calculate angle between faces
-ang_limit = math.radians(89)
+ang_limit = math.radians(89.0)
 # Get preferences
 prefs = bpy.context.preferences.addons["svg-creator"].preferences
 
@@ -52,8 +52,8 @@ angle_fixed, processed) -> Set[Tuple]:
     """Split edges of mesh and paint them with random color, add processed meshes into set to avoid splitting and painting them for the second time.
 
     Processed set is totally ignored in case scene has single-user objects and
-    data, in this case everything will have unique and random colors, but
-    overall processing time will be increased."""
+    data, in this case every surface is guaranteed to have unique and random
+    colors, but overall processing time will be increased."""
 
     if not angle_use_fixed:
         if obj.data.use_auto_smooth:
@@ -75,7 +75,7 @@ angle_fixed, processed) -> Set[Tuple]:
     bm = bmesh.new(use_operators = True)
     bm.from_mesh(obj.data)
     bm.select_mode = {"FACE"}
-    # Generate indices
+    # Generate indices in bmesh same as obj.data indices
     bm.verts.ensure_lookup_table()
     bm.edges.ensure_lookup_table()
     bm.faces.ensure_lookup_table()
@@ -180,7 +180,7 @@ angle_fixed, processed) -> Set[Tuple]:
 
     # Paint every splitted chunk into random vertex color
     for index, face in enumerate(bm.faces):
-        colors, _color, color_f = generate_color(context, colors)
+        colors, _color, color_f = generate_color(context, colors, precision)
 
         # if not face.hide: # No need to check it anymore TODO remove
         bm.faces.active = bm.faces[index]
@@ -229,9 +229,9 @@ angle_fixed, processed) -> Set[Tuple]:
 
     return colors
 
-def generate_color(context, colors) -> (Set, Tuple, Tuple):
+def generate_color(context, colors, precision) -> (Set, Tuple, Tuple):
     """Generate random with desired precision and return it with updated
-    color set. Colors are normalized in 0-1 range, valid for VCol.
+    color set. Colors are normalized in 0-1 range ever after, valid for VCol.
 
     8-bit have to be divided by 255,
     16-bit - by 65535,
@@ -239,27 +239,25 @@ def generate_color(context, colors) -> (Set, Tuple, Tuple):
 
     # Black and dark colors are prohibited, because render doesn't store any
     # info in case there is no alpha is in picture.
-    # About 0.15% precision step is cut from the bottom of the range
-    render_precision = prefs.RenderPrecision
-
+    # About 0.4% precision step is cut from the bottom of the range
     # There is naive implementation of color regeneration re-checking new random
     # color is not in tuple, there should be way to do this better
     # TODO better random color creation algorithm
-    if render_precision == "8 bit":
+    if precision == "8 bit":
         color = tuple([random.randint(1, 255) for _ in range(3)])
         while color in colors:
             color = tuple([random.randint(1, 255) for _ in range(3)])
-    elif render_precision == "16 bit":
-        color = tuple([random.randint(500, 65535) for _ in range(3)])
+    elif precision == "16 bit":
+        color = tuple([random.randint(250, 65_535) for _ in range(3)])
         while color in colors:
-            color = tuple([random.randint(500, 65535) for _ in range(3)])
-    elif render_precision == "32 bit":
+            color = tuple([random.randint(250, 65_535) for _ in range(3)])
+    elif precision == "32 bit":
         color = tuple(
-            [random.randint(10_000_000, 4294967295) for _ in range(3)])
+            [random.randint(1_750_000, 4_294_967_295) for _ in range(3)])
         while color in colors:
             color = tuple(
-                [random.randint(10_000_000, 4294967295) for _ in range(3)])
+                [random.randint(1_750_000, 4_294_967_295) for _ in range(3)])
 
     colors.add(color)
-    color_f = tuple([c / coef[render_precision] for c in color])
+    color_f = tuple([c / coef[precision] for c in color])
     return (colors, color, color_f)
