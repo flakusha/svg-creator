@@ -1,14 +1,12 @@
 // use std::slice::windows;
 use std::collections::{HashMap, HashSet};
-use std::{sync::{Arc, }};
+use std::sync::Arc;
 use rayon::ThreadPoolBuilder;
 use dashmap::{DashMap, DashSet};
 
 // Black are to be ignored
 const PXB: &str = "0.000000 0.000000 0.000000";
-// const PXW: &str = "1.000000 1.000000 1.000000";
 const WIB: [&str; 9] = [PXB, PXB, PXB, PXB, PXB, PXB, PXB, PXB, PXB];
-// const WIW: [&str; 9] = [PXW, PXW, PXW, PXW, PXW, PXW, PXW, PXW, PXW];
 
 /// Picks up information from Python and analyzes the image for set of pixels
 /// and
@@ -66,10 +64,6 @@ max_num_colors: usize)
     }
 
     drop(tx);
-
-    // let temp = Arc::new(
-    //     DashMap::<String, DashSet<String>>::with_capacity(max_num_colors));
-    // Arc::try_unwrap(temp).unwrap()
     Arc::try_unwrap(color_graph).unwrap()
 }
 
@@ -131,7 +125,7 @@ HashMap<String, HashSet<String>> {
                             res.get_mut(&pxc0).unwrap().insert(key.clone());
                         },
                         false => {
-                            // Temp DashSet allocation, cannot allocate and 
+                            // Temp DashSet allocation, cannot allocate and
                             // insert at the same time
                             let mut dst = HashSet::<String>::with_capacity(16);
                             dst.insert(key.clone());
