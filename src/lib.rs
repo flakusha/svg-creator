@@ -5,6 +5,12 @@ use pyo3::wrap_pyfunction;
 mod image_analysis;
 use image_analysis::analyze_image;
 
+#[pymodule]
+pub fn svg_creator_rs(_py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(analyze_image_colors, m)?)?;
+
+    Ok(())
+}
 
 #[pyfunction]
 /// Function takes Blender3D RGB representation of rendered and
@@ -31,19 +37,10 @@ use image_analysis::analyze_image;
 /// ```
 ///
 /// This String is reconstructed into task list for tracing later.
-pub fn analyze_image_colors(py: Python, image: String, w: usize, h: usize,
-mode: &str, max_num_colors: usize) -> PyResult<String> {
-    Ok(analyze_image(image, w, h, mode, max_num_colors))
+pub fn analyze_image_colors(_py: Python, image: String, w: usize, h: usize,
+max_num_colors: usize) -> PyResult<String> {
+    Ok(analyze_image(image, w, h, max_num_colors))
 }
-
-
-#[pymodule]
-pub fn svg_creator_rs(py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(analyze_image_colors, m)?)?;
-
-    Ok(())
-}
-
 
 // #[cfg(test)]
 // mod tests {
